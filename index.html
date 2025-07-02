@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Two-Person Ranking System</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .list-container { display: flex; gap: 30px; margin-bottom: 20px; }
+    .rank-list { border: 1px solid #ccc; padding: 10px; width: 200px; }
+    .rank-list h3 { margin-top: 0; }
+    .item { padding: 6px; margin: 4px 0; background: #f0f0f0; cursor: move; }
+    .compare-results { white-space: pre-wrap; }
+    button { margin-top: 10px; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+
+<h2>Enter Items to Rank</h2>
+<textarea id="itemInput" rows="4" cols="50" placeholder="Enter items, one per line"></textarea><br>
+<button onclick="createRankLists()">Start Ranking</button>
+
+<div id="rankingSection" style="display: none;">
+  <div class="list-container">
+    <div class="rank-list" id="user1List">
+      <h3>User 1</h3>
+    </div>
+    <div class="rank-list" id="user2List">
+      <h3>User 2</h3>
+    </div>
+  </div>
+  <button onclick="compareLists()">Compare Rankings</button>
+  <div class="compare-results" id="results"></div>
+</div>
+
+<script>
+function createDraggableList(items, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = `<h3>${container.querySelector("h3").textContent}</h3>`;
+  items.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.draggable = true;
+    div.textContent = item;
+    container.appendChild(div);
+  });
+
+  let draggedItem = null;
+
+  container.addEventListener("dragstart", e => {
+    if (e.target.classList.contains("item")) {
+      draggedItem = e.target;
+    }
+  });
+
+  container.addEventListener("dragover", e => {
+    e.preventDefault();
+    const target = e.target;
+    if (target.classList.contains("item")) {
+      const bounding = target.getBoundingClientRect();
+      const offset = bounding.y + (bounding.height / 2);
+      if (e.clientY - offset > 0) {
+        target.after(draggedItem);
+      } else {
+        target.before(draggedItem);
+      }
+    }
+  });
+}
+
+function createRankLists() {
+  const input = document.getElementById("itemInput").value.trim();
+  if (!input) return alert("Please enter some items.");
+  const items = input.split("\n").map(x => x.trim()).filter(Boolean);
+
+  createDraggableList(items, "user1List");
+  createDraggableList(items, "user2List");
+
+  document.getElementById("rankingSection").style.display = "block";
+}
+
+function getListOrder(containerId) {
+  return Array.from(document.getElementById(containerId).querySelectorAll(".item")).map(div => div.textContent);
+}
+
+function compareLists() {
+  const list1 = getListOrder("user1List");
+  const list2 = getListOrder("user2List");
+  let results = "";
+
+  const allItems = [...new Set([...list1, ...list2])];
+
+  const sameRankItems = allItems.filter(item => list1.indexOf(item) === list2.indexOf(item));
+
+  if (sameRankItems.length > 0) {
+    results += "Items ranked the same by both users:\n";
+    sameRankItems.forEach(item => {
+      const rank = list1.indexOf(item) + 1;
+      results += `- ${item} (Rank ${rank})\n`;
+    });
+  } else {
+    results = "No items were ranked the same by both users.";
+  }
+
+  document.getElementById("results").textContent = results;
+}
+</script>
+
+</body>
+</html>
+
